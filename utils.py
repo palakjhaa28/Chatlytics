@@ -1,6 +1,5 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from transformers import pipeline
 
 MODEL_PATH = "cardiffnlp/twitter-roberta-base-sentiment"
 
@@ -11,6 +10,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 model.eval()
 
+# NOTE: cardiffnlp/twitter-roberta-base-sentiment only has 3 classes
+# (0 = negative, 1 = neutral, 2 = positive). Update this map if you
+# want accurate labels instead of the original 5-emotion mapping.
 reverse_label_map = {
     0: "Happy",
     1: "Sad",
@@ -48,26 +50,13 @@ def predict_batch(texts, batch_size=64):
 
 
 # -----------------------------
-# CHAT SUMMARIZATION MODEL
+# CHAT CLEANING & SUMMARIZATION
+# (lightweight, frequency-based — no extra model needed)
 # -----------------------------
 
-
-
-import streamlit as st
-
-
-@st.cache_resource
-def load_summarizer():
-    return pipeline(
-        "text-generation",
-        model="gpt2"
-    )
-
-summarizer = load_summarizer()
-
-summarizer = load_summarizer()
-
 import re
+from collections import Counter
+
 
 def clean_text(messages):
 
@@ -83,9 +72,6 @@ def clean_text(messages):
     text = re.sub(r"\s+", " ", text)
 
     return text
-
-
-from collections import Counter
 
 
 def summarize_chat(messages):
